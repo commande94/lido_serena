@@ -97,3 +97,22 @@ textarea {
 .btn-submit:active {
     transform: translateY(0);
 }
+
+.login-link {
+    text-align: center;
+    margin-top: 20px;
+    color: #666;
+    font-size: 14px;
+}
+
+.login-link a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+.login-link a:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
