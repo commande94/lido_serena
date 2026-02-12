@@ -46,6 +46,7 @@ label {
 
 input[type="text"],
 input[type="email"],
+input[type="password"],
 textarea {
     padding: 12px;
     border: 2px solid #e0e0e0;
@@ -53,6 +54,12 @@ textarea {
     font-size: 14px;
     font-family: 'Arial', sans-serif;
     transition: border-color 0.3s;
+}
+
+.password-field {
+    padding: 18px 12px !important;
+    font-size: 16px !important;
+    min-height: 50px;
 }
 
 input[type="text"]:focus,
