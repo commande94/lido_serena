@@ -2,14 +2,10 @@
 require_once '../php/bdd.php';
 
 $id = $_GET['id'];
-echo $id;
 
 $stmt = $pdo->prepare("SELECT * FROM produits WHERE id_produit = ?");
 $stmt->execute([$id]);
 $p = $stmt->fetch();
-echo $p['nom'];
-echo $p['prix'];
-echo $p['id_category'];
 if (!$p) { die("Produit introuvable."); }
 ?>
 
