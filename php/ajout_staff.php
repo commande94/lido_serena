@@ -4,17 +4,19 @@ require_once 'bdd.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $nom = htmlspecialchars($_POST['nom']);
-    $prix = $_POST['prix'];
-    $id_category = $_POST['id_category'];
+    $prenom = $_POST['prenom'];
+    $email = $_POST['email'];
+    $password = $_POST['password'];
 
     try {
-        $sql = "INSERT INTO produits (nom, prix, id_category) VALUES (:nom, :prix, :id_category)";
+        $sql = "INSERT INTO staff (nom, prenom, email, mot_de_passe) VALUES (:nom, :prenom, :email, :password)";
         $stmt = $pdo->prepare($sql);
         
         $stmt->execute([
             ':nom' => $nom,
-            ':prix' => $prix,
-            ':id_category' => $id_category
+            ':prenom' => $prenom,
+            ':email' => $email,
+            ':password' => $password
         ]);
 
         header('Location: ../html/dashboard.php?insert=success');
