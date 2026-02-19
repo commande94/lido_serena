@@ -1,25 +1,32 @@
 <?php
-session_start(); 
-require 'bdd.php'; 
-
-$message = ""; 
+session_start();
+require_once 'bdd.php';
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $email = trim($_POST['email']);
-    $password = $_POST['password'];
+    $email_saisi = trim($_POST['email']);
+    $pass_saisi = $_POST['password']; 
 
-    $stmt = $pdo->prepare("SELECT * FROM staff WHERE email = ?");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    try {
+        $query = $bdd->prepare("SELECT * FROM staff WHERE email = :email");
+        $query->execute(['email' => $email_saisi]);
+        $user = $query->fetch(PDO::FETCH_ASSOC);
 
-    if ($user && password_verify($password, $user['mot_de_passe'])) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['user_name'] = $user['prenom'] . " " . $user['nom'];
-        $_SESSION['user_role'] = $user['role'];
-
-        header("Location: dashboard.php");
-        exit;
-    } else {
-        $message = "Email ou mot de passe incorrect.";
+        if ($user && password_verify($pass_saisi, $user['mot_de_passe'])) {
+            $_SESSION['user_id'] = $user['id_staff'];
+            $_SESSION['nom'] = $user['nom'];
+            $_SESSION['prenom'] = $user['prenom'];
+            
+            header("Location: ../html/menu.html");
+            exit();
+        } else {
+            header('Location: ../html/connexion.html?error=1');
+            exit();
+        }
+    } catch (PDOException $e) {
+        die("Erreur : " . $e->getMessage());
     }
-}?>
+} else {
+    header('Location: ../html/connexion.html');
+    exit();
+}
+?>
