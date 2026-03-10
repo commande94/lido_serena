@@ -27,9 +27,9 @@ $categoriesJSON = json_encode($nomsCategories);
 
 <body>
 
-    <h1 class="dashboard-title">Statistiques Live</h1>
+    <h1 class="dashboard-title" style="background-color: white;">Statistiques Live</h1>
     <nav>
-        <a href="administration.php" class="btn-back">Retour à l'administration</a>
+        <a href="administration.php" class="btn-back" style="background-color: white;">Retour à l'administration</a>
     </nav>
 
     <div class="dashboard-wrapper">
