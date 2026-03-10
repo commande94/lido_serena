@@ -337,3 +337,24 @@ th {
 .btn-delete:hover {
     background-color: #c82333;
 }
+
+/* --- LE SEUL AJOUT POUR LES GRAPHIQUES --- */
+.chart-container,
+.chart-container1,
+.chart-container2 {
+    background: rgba(255, 255, 255, 0.9);
+    /* Fond blanc opaque */
+    padding: 20px;
+    border-radius: 20px;
+    margin-bottom: 30px;
+    width: 100%;
+    max-width: 800px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+.dashboard-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
