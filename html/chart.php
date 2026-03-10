@@ -1,40 +1,29 @@
 <?php
 require_once '../php/bdd.php';
 
-// Récupérer tous les produits avec leur prix
-$sql = "SELECT nom, prix FROM produits ORDER BY id_produit";
-$stmt = $pdo->query($sql);
-$produits = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Récupérer les catégories dynamiquement depuis la base de données
+$sqlCat = "SELECT nom FROM categories ORDER BY id_category";
+$stmtCat = $pdo->query($sqlCat);
+$categories = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
 
-// Préparer les données pour le graphique
-$nomsProduits = [];
-$prixProduits = [];
-
-foreach ($produits as $produit) {
-    $nomsProduits[] = $produit['nom'];
-    $prixProduits[] = $produit['prix'];
+$nomsCategories = [];
+foreach ($categories as $cat) {
+    $nomsCategories[] = $cat['nom'];
 }
 
-// Convertir en JSON pour JavaScript
-$nomsJSON = json_encode($nomsProduits);
-$prixJSON = json_encode($prixProduits);
+// On transforme les catégories en JSON pour le JS
+$categoriesJSON = json_encode($nomsCategories);
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lido Selena - chart</title>
+    <title>Lido Selena - Statistiques</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
-
-<body>
-
-</body>
-
-</html>
 
 <body>
 
@@ -57,116 +46,104 @@ $prixJSON = json_encode($prixProduits);
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
-        // Premier graphique avec les produits et leurs prix
-        const ctx = document.getElementById('myChart');
-        const nomsProduits = <?php echo $nomsJSON; ?>;
-        const prixProduits = <?php echo $prixJSON; ?>;
+        Chart.defaults.color = '#000000';
+        Chart.defaults.font.weight = '600';
 
-        new Chart(ctx, {
+        // --- 1. GRAPHIQUE BARRES : JOURS DE LA SEMAINE ---
+        const ctxBar = document.getElementById('myChart');
+        new Chart(ctxBar, {
             type: 'bar',
             data: {
-                labels: nomsProduits,
+                labels: ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'],
                 datasets: [{
-                    label: 'Prix des produits (€)',
-                    data: prixProduits,
-                    backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                    label: 'Revenus journaliers (€)',
+                    data: [1200, 1900, 1500, 2100, 2800, 4500, 3800],
+                    backgroundColor: 'rgba(102, 126, 234, 0.7)',
                     borderColor: 'rgba(102, 126, 234, 1)',
                     borderWidth: 2
                 }]
             },
             options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Prix (€)'
+                plugins: { title: { display: true, text: 'Chiffre d\'affaires de la semaine' } }
+            }
+        });
+
+        // --- 2. GRAPHIQUE CAMEMBERT : RAPPORTS PAR CATÉGORIE (AVEC €) ---
+        const ctxPie = document.getElementById('myPie');
+        const labelsCategories = <?php echo $categoriesJSON; ?>; 
+        
+        new Chart(ctxPie, {
+            type: 'pie',
+            data: {
+                labels: labelsCategories, 
+                datasets: [{
+                    data: [450, 1200, 800, 600], 
+                    backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0'],
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                plugins: { 
+                    title: { display: true, text: 'Part des revenus par catégorie' },
+                    legend: { position: 'bottom' },
+                    // C'est ici qu'on ajoute le symbole € au survol
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed !== null) {
+                                    label += new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(context.parsed);
+                                }
+                                return label;
+                            }
                         }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
-                    title: {
-                        display: true,
-                        text: 'Prix des produits'
                     }
                 }
             }
         });
 
-        //Deuxieme graphique avec le pie chart
-        const data = {
-            labels: [
-                'Red',
-                'Blue',
-                'Yellow'
-            ],
-            datasets: [{
-                label: 'My First dataset',
-                data: [300, 50, 100],
-                backgroundColor: [
-                    'rgb(255, 99, 132)',
-                    'rgb(54, 162, 235)',
-                    'rgb(255, 205, 86)'
-                ],
-                hoverOffset: 4
-            }]
-        };
-        const config = {
-            type: 'pie',
-            data: data,
-        };
-        const pie = document.getElementById('myPie');
-        new Chart(pie, config);
-
-        //Troisieme graphique avec le line chart
-        const labels_line = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'];
-
-        const datas_line = {
-            labels: labels_line,
-            datasets: [
-                {
-                    label: 'Dataset 1',
-                    data: [65, 59, 80, 81, 56, 55, 40],
-                    borderColor: 'rgb(255, 99, 132)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                    tension: 0.1
-                },
-                {
-                    label: 'Dataset 2',
-                    data: [28, 48, 40, 19, 86, 27, 90],
-                    borderColor: 'rgb(54, 162, 235)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    tension: 0.1
-                }
-            ]
-        };
-
-        const configu = {
+        // --- 3. GRAPHIQUE LINÉAIRE : CA VS BÉNÉFICES (COULEURS DISTINCTES) ---
+        const ctxLine = document.getElementById("myLine");
+        new Chart(ctxLine, {
             type: 'line',
-            data: datas_line,
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
+            data: {
+                labels: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'],
+                datasets: [
+                    {
+                        label: 'Chiffre d\'Affaires (€)',
+                        data: [5000, 4800, 7000, 7500, 9000, 12000, 15000],
+                        borderColor: '#2e59d9', // Bleu foncé
+                        backgroundColor: 'rgba(46, 89, 217, 0.2)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 5
                     },
-                    title: {
-                        display: true,
-                        text: 'Graphique Linéaire (Données Fixes)'
+                    {
+                        label: 'Bénéfices (€)',
+                        data: [2000, 1800, 3500, 3800, 4500, 6500, 8500],
+                        borderColor: '#1cc88a', // Vert émeraude
+                        backgroundColor: 'rgba(28, 200, 138, 0.2)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 5
+                    }
+                ]
+            },
+            options: {
+                plugins: { 
+                    title: { display: true, text: 'Performance Financière Mensuelle' }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) { return value + ' €'; }
+                        }
                     }
                 }
-            },
-        };
-
-        const ctxLine = document.getElementById("myLine");
-        new Chart(ctxLine, configu);
+            }
+        });
     </script>
-
 </body>
-
 </html>
