@@ -11,7 +11,7 @@
 
 <body>
    
-    <a href="inscription.html" class="btn-inscription">
+    <a href="inscription.php" class="btn-inscription">
             Inscription d'un nouveau membre par le Super-Admin
     </a>
     
