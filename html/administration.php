@@ -18,7 +18,6 @@
     }
     require_once '../php/bdd.php';
 
-    // Note: Assuming $pdo is available, as in other files. If not, it might be $bdd.
     
     $message = '';
     if (isset($_GET['insert']) && $_GET['insert'] == 'success') {
