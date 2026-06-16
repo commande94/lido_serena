@@ -4,7 +4,7 @@ let produitsDB = [];
 // Récupérer les produits depuis FastAPI
 async function fetchProduits() {
     try {
-        const response = await fetch("http://127.0.0.1:9000/produits");  // port FastAPI
+        const response = await fetch("http://127.0.0.1:8000/produits");
         produitsDB = await response.json();
         afficherProduits();
     } catch (err) {
@@ -86,15 +86,15 @@ async function validerCommande() {
     }));
 
     try {
-        const response = await fetch("http://127.0.0.1:9000/commande", {
+        const response = await fetch("http://127.0.0.1:8000/commandes", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 produits: produitsData,
                 montant: montantTotal,
                 mode_paiement: mode_paiement,
-                statut_commande: "commande reçue",
-                statut_paiement: "en_attente"
+                statut_commande: "en cuisine",
+                statut_paiement: "non payé"
             })
         });
 

@@ -12,27 +12,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $quantites = $_POST['quantite'] ?? [];
 
     if (!empty($produitsSelectionnes)) {
-        
+
         $id_staff = $_SESSION['id_staff'] ?? 1;
+        $mode_paiement = $_POST['mode_paiement'] ?? 'espèces';
 
-        
-        $stmtCommande = $pdo->prepare("INSERT INTO commandes (id_staff) VALUES (?)");
-        $stmtCommande->execute([$id_staff]);
-        $id_commande = $pdo->lastInsertId();
-
-       
+        // Calculer le montant total à partir des prix en base
+        $montant = 0;
+        $lignes = [];
         foreach ($produitsSelectionnes as $id_produit) {
             $qte = intval($quantites[$id_produit] ?? 0);
             if ($qte > 0) {
+                $stmtPrix = $pdo->prepare("SELECT prix FROM produits WHERE id_produit = ?");
+                $stmtPrix->execute([$id_produit]);
+                $prix = $stmtPrix->fetchColumn();
+                if ($prix !== false) {
+                    $montant += $prix * $qte;
+                    $lignes[] = [$id_produit, $qte];
+                }
+            }
+        }
+
+        if (!empty($lignes)) {
+            $stmtCommande = $pdo->prepare("
+                INSERT INTO commandes (id_staff, montant, mode_paiement)
+                VALUES (?, ?, ?)
+            ");
+            $stmtCommande->execute([$id_staff, $montant, $mode_paiement]);
+            $id_commande = $pdo->lastInsertId();
+
+            foreach ($lignes as [$id_produit, $qte]) {
                 $stmt = $pdo->prepare("
                     INSERT INTO produit_commande (id_com, id_produit, quantite)
                     VALUES (?, ?, ?)
                 ");
                 $stmt->execute([$id_commande, $id_produit, $qte]);
             }
-        }
 
-        $message = "Commande enregistrée avec succès ! (ID : $id_commande)";
+            $message = "Commande enregistrée avec succès ! (ID : $id_commande)";
+        } else {
+            $message = "Aucune quantité valide saisie.";
+        }
     } else {
         $message = "Aucun produit sélectionné.";
     }
@@ -91,6 +110,13 @@ $produits = $pdo->query("SELECT id_produit, nom, prix FROM produits ORDER BY nom
             </table>
 
             <br>
+            <label for="mode_paiement">Mode de paiement :</label>
+            <select name="mode_paiement" id="mode_paiement">
+                <option value="espèces">Espèces</option>
+                <option value="carte">Carte</option>
+            </select>
+
+            <br><br>
             <button type="submit">Valider la commande</button>
         </form>
     </section>
