@@ -18,21 +18,22 @@
 
     <div class="main-container">
 
-        <!-- Partie gauche : produits par catégorie -->
-        <div class="produits-container">
-            <h2>Nos produits</h2>
-            <div id="categories-container">
-                <!-- Les catégories et produits seront ajoutés dynamiquement ici -->
-            </div>
+        <div class="menus-container">
+            <h2>🍔 Menus</h2>
+            <div id="menus-container"></div>
         </div>
 
-        <!-- Partie droite : panier et paiement -->
+        <div class="produits-container">
+            <h2>Nos produits</h2>
+            <div id="categories-container"></div>
+        </div>
+
         <div class="panier-container">
             <h2><i class="fas fa-shopping-cart"></i> Panier</h2>
-            <div id="panier-list">
-                <!-- Les produits sélectionnés s'affichent ici -->
-            </div>
+            <div id="panier-list"></div>
+
             <h3>Total : €<span id="panier-total">0.00</span></h3>
+
             <div class="form-group">
                 <label>Mode de paiement <i class="fas fa-credit-card"></i></label>
                 <select id="mode_paiement">
@@ -40,12 +41,15 @@
                     <option value="carte">Carte</option>
                 </select>
             </div>
+
             <button class="btn-submit" onclick="validerCommande()">
                 <i class="fas fa-paper-plane"></i> Valider la commande
             </button>
         </div>
 
     </div>
+
+    <div id="menu-modal" style="display:none;"></div>
 
     <script src="commande.js"></script>
 </body>
