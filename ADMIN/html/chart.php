@@ -7,16 +7,23 @@ if (!isset($_SESSION['user_id'])) {
 require_once '../php/bdd.php';
 
 
-$sqlCat = "SELECT nom FROM categories ORDER BY id_category";
+$sqlCat = "SELECT c.nom, COUNT(p.id_produit) AS nb_produits
+           FROM categories c
+           LEFT JOIN produits p ON p.id_category = c.id_category
+           GROUP BY c.id_category, c.nom
+           ORDER BY c.id_category";
 $stmtCat = $pdo->query($sqlCat);
 $categories = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
 
 $nomsCategories = [];
+$nbProduits = [];
 foreach ($categories as $cat) {
     $nomsCategories[] = $cat['nom'];
+    $nbProduits[]     = (int) $cat['nb_produits'];
 }
 
-$categoriesJSON = json_encode($nomsCategories);
+$categoriesJSON  = json_encode($nomsCategories, JSON_UNESCAPED_UNICODE);
+$nbProduitsJSON  = json_encode($nbProduits);
 ?>
 
 <!DOCTYPE html>
@@ -58,22 +65,6 @@ $categoriesJSON = json_encode($nomsCategories);
     <script>
         Chart.defaults.color = '#000000';
         Chart.defaults.font.weight = '600';
-        new Chart(document.getElementById('myChart'), {
-            type: 'bar',
-            data: {
-                labels: ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'],
-                datasets: [{
-                    label: 'Revenus journaliers (€)',
-                    data: [1200, 1900, 1500, 2100, 2800, 4500, 3800],
-                    backgroundColor: 'rgba(102, 126, 234, 0.7)',
-                    borderColor: 'rgba(102, 126, 234, 1)',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                plugins: { title: { display: true, text: 'Chiffre d\'affaires de la semaine' } }
-            }
-        });
         // --- 1. GRAPHIQUE BARRES : JOURS DE LA SEMAINE ---
         const ctxBar = document.getElementById('myChart');
         new Chart(ctxBar, {
@@ -95,14 +86,19 @@ $categoriesJSON = json_encode($nomsCategories);
 
         const ctxPie = document.getElementById('myPie');
         const labelsCategories = <?php echo $categoriesJSON; ?>;
+        const dataProduits     = <?php echo $nbProduitsJSON; ?>;
+        const pieColors = [
+            '#ff6384','#36a2eb','#ffce56','#4bc0c0','#9966ff','#ff9f40',
+            '#c9cbcf','#e7534b','#2ecc71','#3498db','#e67e22','#9b59b6','#1abc9c'
+        ];
 
         new Chart(ctxPie, {
             type: 'pie',
             data: {
                 labels: labelsCategories,
                 datasets: [{
-                    data: [450, 1200, 800, 600],
-                    backgroundColor: ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0'],
+                    data: dataProduits,
+                    backgroundColor: pieColors.slice(0, labelsCategories.length),
                     hoverOffset: 15
                 }]
             },
