@@ -65,8 +65,6 @@
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'super-admin'): ?>
                 <a href="manage_user.php" class="btn-manage-users">Gérer les utilisateurs</a>
             <?php endif; ?>
-            <a href="commandes.php" class="btn-chart">Voir les commandes</a>
-
             <a href="../php/logout.php" class="btn-logout" style="background-color: white;">Déconnexion</a>
         </nav>
 

@@ -397,6 +397,7 @@ curl http://localhost:8000/test/db
 **Développement:** Lido Serena Team
 **Dernière mise à jour:** 7 Avril 2026
 **Version:** 1.0.0
+**Gestion de projet:** [Trello - Lido Serena](https://trello.com/b/mwboS3Kf/lido-serena)
 
 ---
 
