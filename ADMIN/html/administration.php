@@ -65,7 +65,7 @@
             <span class="welcome-user" style="background-color: white;">Bienvenue,
                 <?= htmlspecialchars($_SESSION['prenom'] . ' ' . $_SESSION['nom']) ?></span>
             <a href="chart.php" class="btn-chart">Voir les statistiques</a>
-            <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'manager'): ?>
+            <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'super-admin'): ?>
                 <a href="manage_user.php" class="btn-manage-users">Gérer les utilisateurs</a>
             <?php endif; ?>
             <a href="commandes.php" class="btn-chart">Voir les commandes</a>
@@ -135,20 +135,14 @@
         <?php
 
         $sql = "SELECT m.id_menu, m.nom, m.prix, m.disponible, m.description,
-                       GROUP_CONCAT(p.nom SEPARATOR ', ') AS produits"
-            . " FROM menus m"
-            . " LEFT JOIN produit_menus pm ON m.id_menu = pm.id_menu"
-            . " LEFT JOIN produits p ON pm.id_produit = p.id_produit"
+                       GROUP_CONCAT(CONCAT(c.nom, ' (x', mc.quantite, ')') SEPARATOR ', ') AS produits"
+            . " FROM menu m"
+            . " LEFT JOIN menu_categorie mc ON m.id_menu = mc.id_menu"
+            . " LEFT JOIN categories c ON mc.id_category = c.id_category"
             . " GROUP BY m.id_menu"
             . " ORDER BY m.id_menu";
         $stmt = $pdo->query($sql);
         $menus = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $productsByCategory = [];
-        $allProducts = $pdo->query("SELECT id_produit, nom, id_category FROM produits ORDER BY id_category, nom")->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($allProducts as $prod) {
-            $productsByCategory[$prod['id_category']][] = $prod;
-        }
         ?>
 
         <section class="form-container">
@@ -162,24 +156,14 @@
                     <input type="checkbox" name="disponible" value="1" checked>
                 </label>
                 <fieldset>
-                    <legend>Produits du menu (choisir plusieurs si nécessaire)</legend>
+                    <legend>Catégories du menu (cochez celles présentes et indiquez la quantité)</legend>
                     <?php foreach ($categories as $categorie): ?>
-                        <strong><?= htmlspecialchars($categorie['nom']) ?> :</strong><br>
-                        <?php
-                        $catId = $categorie['id_category'];
-                        if (isset($productsByCategory[$catId])):
-                            foreach ($productsByCategory[$catId] as $prod):
-                                ?>
-                                <label>
-                                    <input type="checkbox" name="produits[]" value="<?= $prod['id_produit'] ?>">
-                                    <?= htmlspecialchars($prod['nom']) ?>
-                                </label><br>
-                                <?php
-                            endforeach;
-                        else:
-                            echo '<em>Aucun produit dans cette catégorie</em><br>';
-                        endif;
-                        ?>
+                        <label>
+                            <input type="checkbox" name="categories[]" value="<?= $categorie['id_category'] ?>">
+                            <?= htmlspecialchars($categorie['nom']) ?>
+                        </label>
+                        Quantité :
+                        <input type="number" name="quantite[<?= $categorie['id_category'] ?>]" value="1" min="1" style="width:60px;">
                         <br>
                     <?php endforeach; ?>
                 </fieldset>
@@ -199,7 +183,7 @@
                             <th>Nom</th>
                             <th>Prix</th>
                             <th>Disponibilité</th>
-                            <th>Produits</th>
+                            <th>Composition (catégories)</th>
                             <th>Actions</th>
                         </tr>
                     </thead>

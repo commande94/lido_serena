@@ -50,8 +50,13 @@ class ProduitCommandeItem(BaseModel):
     id_produit: int
     quantite: int
 
+class MenuCommandeItem(BaseModel):
+    id_menu: int
+    quantite: int
+
 class NouvelleCommande(BaseModel):
-    produits: List[ProduitCommandeItem]
+    produits: List[ProduitCommandeItem] = []
+    menus: List[MenuCommandeItem] = []
     montant: float
     mode_paiement: str
     statut_commande: str = "en attente"
@@ -95,6 +100,7 @@ def read_root():
         "status": "online",
         "endpoints_disponibles": [
             "/produits",
+            "/menus",
             "/commandes",
             "/commandes/cuisine",
             "/commandes/{commande_id}/statut",
@@ -124,6 +130,38 @@ def get_produits():
         connection.close()
 
 
+# Récupérer tous les menus disponibles avec leurs catégories (pour la page commande)
+@app.get("/menus")
+def get_menus():
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT id_menu, nom, description, prix
+            FROM menu
+            WHERE disponible = 1
+        """)
+        menus = cursor.fetchall()
+
+        for menu in menus:
+            cur2 = connection.cursor(dictionary=True)
+            cur2.execute("""
+                SELECT c.id_category, c.nom, mc.quantite
+                FROM menu_categorie mc
+                JOIN categories c ON mc.id_category = c.id_category
+                WHERE mc.id_menu = %s
+            """, (menu["id_menu"],))
+            menu["categories"] = cur2.fetchall()
+            cur2.close()
+
+        return menus
+    except Error as e:
+        raise HTTPException(status_code=500, detail=f"Erreur base de données: {str(e)}")
+    finally:
+        cursor.close()
+        connection.close()
+
+
 # Créer une nouvelle commande depuis la page commande
 @app.post("/commandes")
 def ajouter_commande(data: NouvelleCommande):
@@ -139,9 +177,15 @@ def ajouter_commande(data: NouvelleCommande):
 
         for p in data.produits:
             cursor.execute("""
-                INSERT INTO produit_commande (id_com, id_produit, quantite)
+                INSERT INTO produits_commandes (id_com, id_produit, quantite)
                 VALUES (%s, %s, %s)
             """, (id_com, p.id_produit, p.quantite))
+
+        for m in data.menus:
+            cursor.execute("""
+                INSERT INTO commandes_menu (id_com, id_menu, quantite)
+                VALUES (%s, %s, %s)
+            """, (id_com, m.id_menu, m.quantite))
         connection.commit()
 
         return {"message": "Commande ajoutée avec succès", "id_com": id_com}
@@ -183,48 +227,20 @@ def get_commandes_cuisine():
         """
         cursor.execute(query)
         commandes_data = cursor.fetchall()
-        
-        # Si aucune commande en BDD, retourner les données de test
-        if not commandes_data:
-            print("✓ Aucune commande en BDD, retour des données de test")
-            return [
-                CommandeResponse(
-                    id_com=1,
-                    numero_table=5,
-                    plats=[
-                        PlatCommande(id_produit=1, nom="Pizza Margherita", quantite=2, prix=12.50),
-                        PlatCommande(id_produit=2, nom="Pâtes Carbonara", quantite=1, prix=14.00),
-                    ],
-                    statut_commande="en cuisine",
-                    date_commande=datetime.now(),
-                    prix_total=39.00
-                ),
-                CommandeResponse(
-                    id_com=2,
-                    numero_table=3,
-                    plats=[
-                        PlatCommande(id_produit=3, nom="Burger Deluxe", quantite=3, prix=10.50),
-                        PlatCommande(id_produit=4, nom="Frites", quantite=3, prix=3.50),
-                    ],
-                    statut_commande="en cuisine",
-                    date_commande=datetime.now(),
-                    prix_total=42.00
-                ),
-            ]
-        
+
         commandes = []
         for cmd in commandes_data:
             # Récupérer les articles de la commande depuis les deux systèmes :
-            # produit_commande/produits (page COMMANDE) ET commandes_menus/menus (menus)
+            # produits_commandes/produits (page COMMANDE) ET commandes_menu/menu (menus)
             plats_query = """
                 SELECT p.id_produit AS id_produit, p.nom AS nom, p.prix AS prix, pc.quantite AS quantite
-                FROM produit_commande pc
+                FROM produits_commandes pc
                 JOIN produits p ON pc.id_produit = p.id_produit
                 WHERE pc.id_com = %s
                 UNION ALL
                 SELECT m.id_menu AS id_produit, m.nom AS nom, m.prix AS prix, cm.quantite AS quantite
-                FROM commandes_menus cm
-                JOIN menus m ON cm.id_menu = m.id_menu
+                FROM commandes_menu cm
+                JOIN menu m ON cm.id_menu = m.id_menu
                 WHERE cm.id_com = %s
             """
             cursor.execute(plats_query, (cmd['id_com'], cmd['id_com']))
@@ -256,31 +272,7 @@ def get_commandes_cuisine():
         
     except Error as e:
         print(f"Erreur lors de la récupération des commandes: {e}")
-        # En cas d'erreur, retourner les données de test quand même
-        return [
-            CommandeResponse(
-                id_com=1,
-                numero_table=5,
-                plats=[
-                    PlatCommande(id_produit=1, nom="Pizza Margherita", quantite=2, prix=12.50),
-                    PlatCommande(id_produit=2, nom="Pâtes Carbonara", quantite=1, prix=14.00),
-                ],
-                statut_commande="en cuisine",
-                date_commande=datetime.now(),
-                prix_total=39.00
-            ),
-            CommandeResponse(
-                id_com=2,
-                numero_table=3,
-                plats=[
-                    PlatCommande(id_produit=3, nom="Burger Deluxe", quantite=3, prix=10.50),
-                    PlatCommande(id_produit=4, nom="Frites", quantite=3, prix=3.50),
-                ],
-                statut_commande="en cuisine",
-                date_commande=datetime.now(),
-                prix_total=42.00
-            ),
-        ]
+        raise HTTPException(status_code=500, detail=f"Erreur base de données: {str(e)}")
     finally:
         cursor.close()
         connection.close()
@@ -409,13 +401,13 @@ def get_commande_details(commande_id: int):
         # Récupérer les articles depuis les deux systèmes (produits + menus)
         plats_query = """
             SELECT p.id_produit AS id_produit, p.nom AS nom, p.prix AS prix, pc.quantite AS quantite
-            FROM produit_commande pc
+            FROM produits_commandes pc
             JOIN produits p ON pc.id_produit = p.id_produit
             WHERE pc.id_com = %s
             UNION ALL
             SELECT m.id_menu AS id_produit, m.nom AS nom, m.prix AS prix, cm.quantite AS quantite
-            FROM commandes_menus cm
-            JOIN menus m ON cm.id_menu = m.id_menu
+            FROM commandes_menu cm
+            JOIN menu m ON cm.id_menu = m.id_menu
             WHERE cm.id_com = %s
         """
         cursor.execute(plats_query, (commande_id, commande_id))
@@ -486,10 +478,10 @@ def init_test_commandes():
             commande_id = cursor.lastrowid
             
             # Ajouter des produits de test
-            produits_test = [(16, 2), (14, 1)]  # (id_produit, quantite)
+            produits_test = [(328, 2), (335, 1)]  # (id_produit, quantite)
             for prod_id, qte in produits_test:
                 insert_produit = """
-                    INSERT INTO produit_commande (id_com, id_produit, quantite)
+                    INSERT INTO produits_commandes (id_com, id_produit, quantite)
                     VALUES (%s, %s, %s)
                 """
                 cursor.execute(insert_produit, (commande_id, prod_id, qte))

@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $disponible = isset($_POST['disponible']) ? 1 : 0;
 
     try {
-        $sql = "UPDATE menus SET nom = :nom, description = :description, prix = :prix, disponible = :disponible WHERE id_menu = :id_menu";
+        $sql = "UPDATE menu SET nom = :nom, description = :description, prix = :prix, disponible = :disponible WHERE id_menu = :id_menu";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             ':nom' => $nom,
@@ -19,14 +19,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':id_menu' => $id_menu
         ]);
 
-        $pdo->prepare("DELETE FROM produit_menus WHERE id_menu = ?")->execute([$id_menu]);
-        if (!empty($_POST['produits']) && is_array($_POST['produits'])) {
-            $sql2 = "INSERT INTO produit_menus (id_menu, id_produit) VALUES (:id_menu, :id_produit)";
+        $pdo->prepare("DELETE FROM menu_categorie WHERE id_menu = ?")->execute([$id_menu]);
+        if (!empty($_POST['categories']) && is_array($_POST['categories'])) {
+            $sql2 = "INSERT INTO menu_categorie (id_menu, id_category, quantite) VALUES (:id_menu, :id_category, :quantite)";
             $stmt2 = $pdo->prepare($sql2);
-            foreach ($_POST['produits'] as $id_produit) {
+            foreach ($_POST['categories'] as $id_category) {
+                $quantite = max(1, intval($_POST['quantite'][$id_category] ?? 1));
                 $stmt2->execute([
                     ':id_menu' => $id_menu,
-                    ':id_produit' => $id_produit
+                    ':id_category' => $id_category,
+                    ':quantite' => $quantite
                 ]);
             }
         }
@@ -42,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         die("ID menu manquant");
     }
 
-    $sql = "SELECT * FROM menus WHERE id_menu = :id_menu";
+    $sql = "SELECT * FROM menu WHERE id_menu = :id_menu";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':id_menu' => $id_menu]);
     $menu = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -50,11 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         die("Menu non trouvé");
     }
 
-    // récupérer les produits disponibles et ceux déjà associés
-    $allProducts = $pdo->query("SELECT id_produit, nom, id_category FROM produits ORDER BY id_category, nom")->fetchAll(PDO::FETCH_ASSOC);
-    $selected = $pdo->prepare("SELECT id_produit FROM produit_menus WHERE id_menu = ?");
+    // récupérer les catégories disponibles et celles déjà associées (avec quantité)
+    $allCategories = $pdo->query("SELECT id_category, nom FROM categories ORDER BY nom")->fetchAll(PDO::FETCH_ASSOC);
+    $selected = $pdo->prepare("SELECT id_category, quantite FROM menu_categorie WHERE id_menu = ?");
     $selected->execute([$id_menu]);
-    $selectedIds = $selected->fetchAll(PDO::FETCH_COLUMN);
+    $selectedRows = $selected->fetchAll(PDO::FETCH_KEY_PAIR);
+    $selectedIds = array_keys($selectedRows);
 }
 ?>
 
@@ -84,27 +87,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="checkbox" name="disponible" value="1" <?= $menu['disponible'] ? 'checked' : '' ?>>
                 </label>
                 <fieldset>
-                    <legend>Produits du menu (cochez ceux présents)</legend>
+                    <legend>Catégories du menu (cochez celles présentes et indiquez la quantité)</legend>
                     <?php
-                    $categories = $pdo->query("SELECT id_category, nom FROM categories ORDER BY nom")->fetchAll(PDO::FETCH_ASSOC);
-                    $productsByCategory = [];
-                    foreach ($allProducts as $prod) {
-                        $productsByCategory[$prod['id_category']][] = $prod;
-                    }
-                    foreach ($categories as $categorie):
+                    foreach ($allCategories as $categorie):
                         $catId = $categorie['id_category'];
-                        echo '<strong>' . htmlspecialchars($categorie['nom']) . ' :</strong><br>';
-                        if (isset($productsByCategory[$catId])):
-                            foreach ($productsByCategory[$catId] as $prod):
-                                $checked = in_array($prod['id_produit'], $selectedIds) ? 'checked' : '';
-                                echo '<label><input type="checkbox" name="produits[]" value="' . $prod['id_produit'] . '" ' . $checked . '> ' . htmlspecialchars($prod['nom']) . '</label><br>';
-                            endforeach;
-                        else:
-                            echo '<em>Aucun produit dans cette catégorie</em><br>';
-                        endif;
-                        echo '<br>';
-                    endforeach;
-                    ?>
+                        $checked = in_array($catId, $selectedIds) ? 'checked' : '';
+                        $qte = $selectedRows[$catId] ?? 1;
+                        ?>
+                        <label>
+                            <input type="checkbox" name="categories[]" value="<?= $catId ?>" <?= $checked ?>>
+                            <?= htmlspecialchars($categorie['nom']) ?>
+                        </label>
+                        Quantité :
+                        <input type="number" name="quantite[<?= $catId ?>]" value="<?= htmlspecialchars($qte) ?>" min="1" style="width:60px;">
+                        <br>
+                    <?php endforeach; ?>
                 </fieldset>
                 <button type="submit">Enregistrer</button>
             </form>

@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $date_creation = date('Y-m-d');
 
     try {
-        $sql = "INSERT INTO menus (nom, description, prix, date_creation, disponible)
+        $sql = "INSERT INTO menu (nom, description, prix, date_creation, disponible)
                 VALUES (:nom, :description, :prix, :date_creation, :disponible)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -23,14 +23,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $id_menu = $pdo->lastInsertId();
 
-        // gestion des produits du menu
-        if (!empty($_POST['produits']) && is_array($_POST['produits'])) {
-            $sql2 = "INSERT INTO produit_menus (id_menu, id_produit) VALUES (:id_menu, :id_produit)";
+        // gestion des catégories composant le menu
+        if (!empty($_POST['categories']) && is_array($_POST['categories'])) {
+            $sql2 = "INSERT INTO menu_categorie (id_menu, id_category, quantite) VALUES (:id_menu, :id_category, :quantite)";
             $stmt2 = $pdo->prepare($sql2);
-            foreach ($_POST['produits'] as $id_produit) {
+            foreach ($_POST['categories'] as $id_category) {
+                $quantite = max(1, intval($_POST['quantite'][$id_category] ?? 1));
                 $stmt2->execute([
                     ':id_menu' => $id_menu,
-                    ':id_produit' => $id_produit
+                    ':id_category' => $id_category,
+                    ':quantite' => $quantite
                 ]);
             }
         }

@@ -1,9 +1,9 @@
 <?php
 session_start();
 
-// y'a que les mamagers qui peuvent accéder à cette page
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'manager') {
-    // redirection si c'est pas un manager ou si il est pas connecté
+// y'a que les super-admins qui peuvent accéder à cette page
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'super-admin') {
+    // redirection si c'est pas un super-admin ou si il est pas connecté
     header('Location: connexion.html');
     exit();
 }

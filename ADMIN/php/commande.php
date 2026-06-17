@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             foreach ($lignes as [$id_produit, $qte]) {
                 $stmt = $pdo->prepare("
-                    INSERT INTO produit_commande (id_com, id_produit, quantite)
+                    INSERT INTO produits_commandes (id_com, id_produit, quantite)
                     VALUES (?, ?, ?)
                 ");
                 $stmt->execute([$id_commande, $id_produit, $qte]);

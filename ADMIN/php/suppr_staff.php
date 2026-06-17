@@ -2,8 +2,8 @@
 session_start();
 require_once 'bdd.php';
 
-// y'a que les mamagers qui peuvent supprimer des comptes staff
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'manager') {
+// y'a que les super-admins qui peuvent supprimer des comptes staff
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'super-admin') {
     header('Location: ../html/connexion.html');
     exit();
 }

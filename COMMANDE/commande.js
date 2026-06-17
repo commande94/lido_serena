@@ -9,13 +9,8 @@ let choixMenu = {};
 // ---------------- PRODUITS ----------------
 async function fetchProduits() {
     try {
-<<<<<<< HEAD
-        const response = await fetch("http://127.0.0.1:8000/produits");
-        produitsDB = await response.json();
-=======
-        const res = await fetch("http://127.0.0.1:9000/produits");
+        const res = await fetch("http://127.0.0.1:8000/produits");
         produitsDB = await res.json();
->>>>>>> dev-back-miguel
         afficherProduits();
     } catch (err) {
         console.error("Produits error:", err);
@@ -25,7 +20,7 @@ async function fetchProduits() {
 // ---------------- MENUS ----------------
 async function fetchMenus() {
     try {
-        const res = await fetch("http://127.0.0.1:9000/menus");
+        const res = await fetch("http://127.0.0.1:8000/menus");
         menusDB = await res.json();
 
         console.log("MENUS RECUS :", menusDB);
@@ -215,22 +210,27 @@ function afficherPanier() {
     document.getElementById("panier-total").innerText = total.toFixed(2);
 }
 
-<<<<<<< HEAD
-// Valider la commande
+// ---------------- VALIDER COMMANDE ----------------
 async function validerCommande() {
-    if (panier.length === 0) {
+    if (panier.length === 0 && panierMenus.length === 0) {
         alert("Panier vide !");
         return;
     }
     const mode_paiement = document.getElementById("mode_paiement").value;
 
-    // Calcul du montant total
-    const montantTotal = panier.reduce((acc, item) => acc + item.prix * item.quantite, 0);
+    // Calcul du montant total (produits + menus)
+    const montantTotal =
+        panier.reduce((acc, item) => acc + item.prix * item.quantite, 0) +
+        panierMenus.reduce((acc, menu) => acc + menu.prix * menu.quantite, 0);
 
-    // Préparer la liste des produits au format attendu par FastAPI
     const produitsData = panier.map(item => ({
         id_produit: item.id_produit,
         quantite: item.quantite
+    }));
+
+    const menusData = panierMenus.map(menu => ({
+        id_menu: menu.id_menu,
+        quantite: menu.quantite
     }));
 
     try {
@@ -239,6 +239,7 @@ async function validerCommande() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 produits: produitsData,
+                menus: menusData,
                 montant: montantTotal,
                 mode_paiement: mode_paiement,
                 statut_commande: "en cuisine",
@@ -246,18 +247,17 @@ async function validerCommande() {
             })
         });
 
-        const data = await response.json();
-        alert("✅ Commande validée ! ID: " + data.id_com);
+        await response.json();
+        alert("✅ Votre commande a été envoyée à la cuisine !");
         panier = [];
+        panierMenus = [];
         afficherPanier();
     } catch (err) {
         console.error("Erreur lors de l'envoi de la commande:", err);
     }
 }
-// Initialisation
-=======
+
 // ---------------- INIT ----------------
->>>>>>> dev-back-miguel
 fetchProduits();
 fetchMenus();
 afficherPanier();
